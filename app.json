@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "newArchEnabled": true,
+    "name": "Filmatic",
+    "slug": "frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "popcore",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "backgroundColor": "#151715",
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "UIStatusBarHidden": true,
+        "UIRequiresFullScreen": true
+      }
+    },
+    "android": {
+      "package": "com.moviles.filmatic",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#151715"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/bukhari_script/Bukhari_Script.ttf"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "786576ff-0982-4074-a858-4358aa2a3b69"
+      }
+    }
+  }
+}
