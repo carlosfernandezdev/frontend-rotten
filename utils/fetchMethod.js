@@ -15,7 +15,7 @@ class FetchWrapper {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-                //credentials: 'include'
+                credentials: 'include'
             });
     
             return response;
@@ -34,7 +34,7 @@ class FetchWrapper {
                 // headers: {
                 //     'Content-Type': 'application/json',
                 // },
-                //credentials: 'include'
+                credentials: 'include'
             });
             // const data = await response.json();
             // //console.log(data)
@@ -53,7 +53,7 @@ class FetchWrapper {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-                //credentials: 'include'
+                credentials: 'include'
             });
     
             return response;
@@ -72,7 +72,7 @@ class FetchWrapper {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                //credentials: 'include'
+                credentials: 'include'
             });
             //console.log('aa')
             return response;
@@ -91,7 +91,7 @@ class FetchWrapper {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-                //credentials: 'include'
+                credentials: 'include'
             });
 
             return response;
