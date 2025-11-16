@@ -5,51 +5,98 @@ import { WatchList } from './WatchList';
 import { Link } from 'expo-router';
 import { RemoveWatchList } from './rmvWatchList';
 
-export function Serie({ serie, source }) {
-  //console.log('---- SERIE COMPONENTE ----')
-  //console.log(serie)
+const Serie = memo(({ serie, source }) => {
+  // Aseguramos slug
   serie.slug = serie.slug || serie.idFromAPI;
+
+  const rawTitle = serie.title || serie.name || 'Sin título';
+  const title =
+    rawTitle.length > 23 ? `${rawTitle.slice(0, 20)}...` : rawTitle;
+
+  const rawDescription =
+    serie.description || serie.overview || 'Sin descripción disponible.';
+  const description =
+    rawDescription.length > 120
+      ? `${rawDescription.slice(0, 117)}...`
+      : rawDescription;
+
   return (
     <Link href={`tv/${serie.slug}`} asChild>
-      <Pressable activeOpacity={0.7}>
+      <Pressable>
         <View key={serie.slug} style={styles.card}>
+          {/* Poster */}
           <View style={styles.imageContainer}>
-            <Image 
-              source={{ uri: serie.image }} 
-              style={styles.image}
-              onError={(error) => console.log('Error loading image:', error)}
-            />
-          </View>
-          <View style={styles.contentContainer}>
-            <Text style={styles.title}>{serie.title ? serie.title.slice(0, 20) : 'Sin título'}...</Text>
-            <Score score={serie.score} maxScore={10} />
-            <Text style={styles.description}>{serie.description ? serie.description.slice(0, 100) : 'Sin descripción'}...</Text>
-            {source === 'WLScreen' ? (
-              <RemoveWatchList item={serie} source='tv' />
+            {serie.image ? (
+              <Image
+                source={{ uri: serie.image }}
+                style={styles.image}
+                resizeMode="cover"
+                onError={(error) =>
+                  console.log('Error loading image serie:', error)
+                }
+              />
             ) : (
-              <WatchList item={serie} source='tv' />
+              <View style={styles.imagePlaceholder}>
+                <Text style={styles.imagePlaceholderText}>Sin imagen</Text>
+              </View>
             )}
+          </View>
+
+          {/* Contenido */}
+          <View style={styles.contentContainer}>
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
+
+            <View style={styles.scoreContainer}>
+              <Score score={serie.score} maxScore={10} />
+            </View>
+
+            <Text style={styles.description} numberOfLines={4}>
+              {description}
+            </Text>
+
+            <View style={styles.actionsRow}>
+              {source === 'WLScreen' ? (
+                <RemoveWatchList item={serie} source="tv" />
+              ) : (
+                <WatchList item={serie} source="tv" />
+              )}
+            </View>
           </View>
         </View>
       </Pressable>
     </Link>
   );
-}
+});
 
 export function AnimatedCustomSerie({ serie, index, source }) {
   const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
 
   useEffect(() => {
     Animated.timing(opacity, {
       toValue: 1,
-      duration: 150,
+      duration: 180,
       delay: index * 50,
       useNativeDriver: true,
     }).start();
-  }, [opacity, index]);
+
+    Animated.timing(translateY, {
+      toValue: 0,
+      duration: 180,
+      delay: index * 50,
+      useNativeDriver: true,
+    }).start();
+  }, [opacity, translateY, index]);
 
   return (
-    <Animated.View style={{ opacity }}>
+    <Animated.View
+      style={{
+        opacity,
+        transform: [{ translateY }],
+      }}
+    >
       <Serie serie={serie} source={source} />
     </Animated.View>
   );
@@ -57,48 +104,68 @@ export function AnimatedCustomSerie({ serie, index, source }) {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 20,
-    marginHorizontal: 10,
-    backgroundColor: '#151715',
-    borderRadius: 10,
+    marginBottom: 16,
+    marginHorizontal: 12,
+    backgroundColor: '#FFFFFF', // 💡 fondo claro
+    borderRadius: 16,
     flexDirection: 'row',
     padding: 10,
+    gap: 10,
+
+    // sombra suave tipo app moderna
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   imageContainer: {
+    width: 90,
+    height: 135,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
   },
   image: {
-    width: 120,
-    height: 170,
-    borderRadius: 5,
-    resizeMode: 'cover',
+    width: '100%',
+    height: '100%',
   },
-  title: {
-    marginLeft: 5,
-    marginTop: 5,
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    padding: 5
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    fontSize: 11,
+    color: '#6B7280',
   },
   contentContainer: {
-    flexShrink: 1,
-    flexWrap: 'wrap',
+    flex: 1,
     flexDirection: 'column',
-    width: '100%',
+    justifyContent: 'space-between',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  scoreContainer: {
+    marginBottom: 4,
   },
   description: {
-    fontSize: 14,
-    color: 'white',
-    padding: 5,
-    marginLeft: 5,
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    width: '100%',
+    fontSize: 13,
+    color: '#4B5563',
+    marginBottom: 8,
   },
+  actionsRow: {
+    marginTop: 4,
+  },
+
+  // estilos viejos no usados, los dejo solo si algo externo los usa
   boton: {
-    backgroundColor: '#2f2f2f',
+    backgroundColor: '#E5E7EB',
     width: 120,
     padding: 5,
     borderRadius: 5,
@@ -107,6 +174,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   Text: {
-    color: 'white',
+    color: '#111827',
   },
 });
+
+export default Serie;

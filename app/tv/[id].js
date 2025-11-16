@@ -1,457 +1,568 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Link, useRouter } from "expo-router";
-import { Pressable, View, Text, StyleSheet, SafeAreaView, ActivityIndicator, Image, ScrollView, TextInput, Button } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Pressable,
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Button,
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useCallback, useState, useEffect } from "react";
-import Logo from "../../Components/Logo";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from '@react-navigation/native';
+
 import { getSeriesDetails } from "../../api/series";
 import { Score } from "../../Components/Score";
 import { fetchsito1 } from '../../utils/fetchMethod';
-import AddReview from "../../Components/addReview";  // Importamos el nuevo componente
-import { useFocusEffect } from '@react-navigation/native';
-import RenderHtml from 'react-native-render-html';
-import { useWindowDimensions } from 'react-native';
+import AddReview from "../../Components/addReview";
 import ModalEditReview from "../../Components/Modal";
 
 const SeriesDetails = () => {
-    //console.log('detalle de serie')
-    const { id } = useLocalSearchParams();
-    const { width } = useWindowDimensions();
-    const [series, setSeries] = useState({});
+  const { id } = useLocalSearchParams();
+  const [series, setSeries] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(false);
+  const [showFullCast, setShowFullCast] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [totalScore, setTotalScore] = useState(0);
+  const [scoreCount, setScoreCount] = useState(0);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const router = useRouter();
 
-    const [loading, setLoading] = useState(true);
-    const [reload, setReload] = useState(false);
-    const [totalScore, setTotalScore] = useState(0);
-    const [scoreCount, setScoreCount] = useState(0);
-    const [showFullCast, setShowFullCast] = useState(false); // Define el estado showFullCast
-    const [loadingComments, setLoadingComments] = useState(true);
-    const [isModalVisible, setModalVisible] = useState(false);
-    const [selectedReview, setSelectedReview] = useState(null);
-    const router = useRouter();
-    //console.log('loadingComments al principio es',loadingComments)
-    
-    const fetchSeriesDetails = async () => {
-        try {
-            const seriesDetails = await getSeriesDetails(id);
-            setSeries(seriesDetails);
-        } catch (error) {
-            console.error("Error fetching series details:", error);
-        } finally {
-            setLoading(false);
-            //setLoadingComments(false)
-        }
-    };
-
-    const getReviews = async () => {
-        try {
-            setLoadingComments(true)
-            const response = await fetchsito1.get(`/comentary/getComentaries/${id}`);
-            const data = await response.json();
-
-            //console.log(response.ok)
-            if (response.ok) {
-                const { user, comentaries } = data;
-                //console.log(user)
-                //console.log('loadingComments es',loadingComments)
-                setTimeout(() => {
-                    //console.log(comentaries.length)
-    
-                    const { reviews, newTotal, newScoreCount } = comentaries.reduce((acc, review, index) => {
-                        //console.log(`userId: ${user.id} - review.id_user._id: ${review.id_user._id}`)
-                        const isActionable = user.id === review.id_user._id;
-                        //console.log(review)
-                        //console.log('el usuario actual puede editar o borrar este comentario?', isActionable);
-                        acc.newTotal += review.rating;
-                        acc.newScoreCount = index + 1;
-                        acc.reviews.push({
-                            id: review._id,
-                            author: review.id_user.username,
-                            date: review.createdAt,
-                            quote: review.comentario,
-                            rating: review.rating,
-                            isActionable
-                        });
-                        return acc;
-                    }, { reviews: [], newTotal: 0, newScoreCount: 0 });
-    
-        
-                    setTotalScore(newTotal);
-                    setScoreCount(newScoreCount);
-                    setSeries((prevSeries) => ({
-                        ...prevSeries,
-                        reviews,
-                    }));
-                    setLoadingComments(false)
-                }, 500)
-            } else {
-                console.error('Error al cargar los comentarios:', data.message);
-                setLoadingComments(false)
-            }
-        } catch (error) {
-            console.error('Error al cargar los comentarios:', error);
-        }
-    };
-
-    useFocusEffect(
-        useCallback(() => {
-            getReviews();
-            fetchSeriesDetails();
-        }, [id, reload])
-    );
-
-    // Función para actualizar las calificaciones y el promedio
-    const handleAddReviewAndScore = async (reviewText, reviewRating) => {
-        try {
-            //console.log('Review', reviewText)
-            //console.log('Rating', reviewRating)
-
-            const newReview = {
-                date: new Date().toISOString(),
-                quote: reviewText,
-                rating: parseInt(reviewRating),
-            };
-    
-            const film = {
-                imagen: series.img,
-                titulo: series.title,
-                descripcion: series.description,
-                rating: series.score,
-                generos: series.genres,
-                estreno: series.releaseDate,
-                id: series.seriesId
-            };
-
-            //console.log('serie',series)
-            //console.log('film',film)
-    
-            const response = await fetchsito1.post("/comentary/postComentary", { newReview, film, type: 'tv' });
-            const contentType = response.headers.get("content-type");
-            //console.log(contentType);
-    
-            const data = await response.json();
-            if (response.ok) {
-                setLoadingComments(true)
-                //console.log(data);
-                setReload(!reload);
-            } else {
-                console.error(data);
-            }
-        } catch (error) {
-            console.error("Error fetching series details:", error);
-        }
-    };
-
-    // Función para borrar comentarios
-const handleDeleteReview = async (review) => {
+  const fetchSeriesDetails = async () => {
     try {
-        //console.log(review)
-        //console.log('comentario a borrar', review.id)
-        const response = await fetchsito1.delete(`/comentary/deleteComentary/${review.id}`);
-        //console.log('a')
-        const data = await response.json();
-        //console.log('b')
-        //console.log('response del delete comentario', response.ok)
-        if(response.ok){
-            //console.log('c')
-            setReload(!reload);
-        }
+      const seriesDetails = await getSeriesDetails(id);
+      setSeries(seriesDetails);
     } catch (error) {
-        console.error('Error al borrar el comentario:', error);
+      // console.error("Error fetching series details:", error);
+    } finally {
+      setLoading(false);
     }
-};
+  };
 
-const handleEditReview = (review) => {
+  const getReviews = async () => {
+    try {
+      setLoadingComments(true);
+      const response = await fetchsito1.get(`/comentary/getComentaries/${id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        const { user, comentaries } = data;
+
+        setTimeout(() => {
+          const { reviews, newTotal, newScoreCount } = comentaries.reduce(
+            (acc, review, index) => {
+              const isActionable = user.id === review.id_user._id;
+
+              acc.newTotal += review.rating;
+              acc.newScoreCount = index + 1;
+              acc.reviews.push({
+                id: review._id,
+                author: review.id_user.username,
+                date: review.createdAt,
+                quote: review.comentario,
+                rating: review.rating,
+                isActionable,
+              });
+              return acc;
+            },
+            { reviews: [], newTotal: 0, newScoreCount: 0 }
+          );
+
+          setTotalScore(newTotal);
+          setScoreCount(newScoreCount);
+          setSeries((prevSeries) => ({
+            ...prevSeries,
+            reviews,
+          }));
+          setLoadingComments(false);
+        }, 500);
+      } else {
+        setLoadingComments(false);
+      }
+    } catch (error) {
+      setLoadingComments(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      getReviews();
+      fetchSeriesDetails();
+    }, [id, reload])
+  );
+
+  // Añadir reseña y rating
+  const handleAddReviewAndScore = async (reviewText, reviewRating) => {
+    try {
+      const newReview = {
+        date: new Date().toISOString(),
+        quote: reviewText,
+        rating: parseInt(reviewRating),
+      };
+
+      const film = {
+        imagen: series.img,
+        titulo: series.title,
+        descripcion: series.description,
+        rating: series.score,
+        generos: series.genres,
+        estreno: series.releaseDate,
+        id: series.seriesId,
+      };
+
+      const response = await fetchsito1.post("/comentary/postComentary", {
+        newReview,
+        film,
+        type: "tv",
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setLoadingComments(true);
+        setReload((prev) => !prev);
+      } else {
+        // console.error(data);
+      }
+    } catch (error) {
+      // console.error("Error posting series review:", error);
+    }
+  };
+
+  // Borrar reseña
+  const handleDeleteReview = async (review) => {
+    try {
+      const response = await fetchsito1.delete(
+        `/comentary/deleteComentary/${review.id}`
+      );
+      const data = await response.json();
+      if (response.ok) {
+        setReload((prev) => !prev);
+      }
+    } catch (error) {
+      // console.error("Error al borrar el comentario:", error);
+    }
+  };
+
+  // Editar reseña
+  const handleEditReview = (review) => {
     setSelectedReview(review);
     setTimeout(() => {
-        setModalVisible(true);
-    }, 500)
-    
-};
+      setModalVisible(true);
+    }, 500);
+  };
 
-const handleSaveEditedReview = async (editedReview, editedScore) => {
-    // Call your API to save the edited review and rating
-    // After saving, update the review list with the new data
-    // You can make an API call here to update the review and reload the list
+  const handleSaveEditedReview = async (editedReview, editedScore) => {
     try {
-        //console.log('editedReview', editedReview)
-        //console.log('editedScore', editedScore)
-        //console.log('selectedReview', selectedReview)
-        const response = await fetchsito1.patch(`/comentary/updateComentary/${selectedReview.id}`, { quote: editedReview, rating: editedScore });
-        //console.log(response)
-        const data = await response.json();
-        //console.log(data)
-        if(response.ok){
-            //console.log('comentario actualizado')
-        }
+      const response = await fetchsito1.patch(
+        `/comentary/updateComentary/${selectedReview.id}`,
+        { quote: editedReview, rating: editedScore }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        // console.log("comentario actualizado");
+      }
     } catch (error) {
-        console.error('Error al actualizar el comentario:', error);
-    }finally{
-        setModalVisible(false);
-        setReload(!reload); // Trigger a reload to reflect changes
+      console.error("Error al actualizar el comentario:", error);
+    } finally {
+      setModalVisible(false);
+      setReload((prev) => !prev);
     }
-};
+  };
 
+  // Promedio de usuarios
+  const averageScore =
+    scoreCount > 0 ? Number((totalScore / scoreCount).toFixed(1)) : 0;
 
-    // Calcular el promedio
-    const averageScore = scoreCount > 0 ? (totalScore / scoreCount).toFixed(1) : 0;
-
-    if (loading) {
-        return <ActivityIndicator size="large" color="#fff" />;
-    }
-
+  if (loading) {
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <Logo />
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
-                <AntDesign name="back" size={24} color="white" />
-            </Pressable>
-
-            <ScrollView>
-                <View style={styles.container}>
-                    <View style={styles.imageContainer}>
-                        <Image 
-                            source={{ uri: series.img }} 
-                            style={styles.image}
-                            resizeMode="cover"
-                            onError={(error) => console.log("Error loading image:", error)}
-                        />
-                    </View>
-                    <View style={styles.scoresection}>
-                        <Score score={series.score} maxScore={10} />
-                        <Score score={averageScore} maxScore={10} />
-                    </View>
-                    <Text style={styles.title}>{series.title}</Text>
-                    <Text style={styles.description}>{series.description}</Text>
-
-                    {/* Fecha de estreno */}
-                    <View style={[styles.section, styles.SectionColor]}>
-                        <Text style={styles.sectionTitle}>Fecha de estreno</Text>
-                        <Text style={styles.releaseDate}>{new Date(series.releaseDate).toLocaleDateString()}</Text>
-                    </View>
-
-                    {/* Géneros */}
-                    <View style={[styles.section, styles.SectionColor]}>
-                        <Text style={styles.sectionTitle}>Generos</Text>
-                        <Text style={styles.genres}>
-                            {series.genres && series.genres.length > 0 ? series.genres.join(", ") : "No hay informacion disponible del genero."}
-                        </Text>
-                    </View>
-
-                    {/* Elenco */}
-                    <View style={[styles.section, styles.SectionColor]}>
-                        <Text style={styles.sectionTitle}>Elenco</Text>
-                        {series.cast && series.cast.length > 0 ? (
-                            <>
-                                {showFullCast ? (
-                                    series.cast.map((actor, index) => (
-                                        <View key={index} style={styles.castItem}>
-                                            <Text style={styles.castName}>{actor.name}</Text>
-                                            <Text style={styles.castCharacter}>as {actor.character}</Text>
-                                        </View>
-                                    ))
-                                ) : (
-                                    <View style={styles.castItem}>
-                                        <Text style={styles.castName}>{series.cast[0].name}</Text>
-                                        <Text style={styles.castCharacter}>as {series.cast[0].character}</Text>
-                                    </View>
-                                )}
-                                <Button 
-                                    title={showFullCast ? "Ocultar elenco" : "Mostrar elenco"} 
-                                    onPress={() => setShowFullCast(!showFullCast)} 
-                                />
-                            </>
-                        ) : (
-                            <Text style={styles.noDataText}>No hay Información disponible del elenco.</Text>
-                        )}
-                    </View>
-
-                    {/* Spinner de carga para comentarios */}
-                    <View style={[styles.section, styles.SectionColor]}>
-                        <Text style={styles.sectionTitle}>
-                            Reseñas de usuarios
-                        </Text>
-                        {loadingComments && <ActivityIndicator size="small" color="#fff" style={styles.loadingIndicator} />}
-                        {!loadingComments && (
-                            <>
-                                {series.reviews && series.reviews.length > 0 ? (
-                                    series.reviews.map((review, index) => (
-                                        <View key={index} style={styles.reviewItem}>
-                                            <View style={styles.reviewHeader}>
-                                                <Text style={styles.reviewAuthor}>{review.author}</Text>
-                                                {review.isActionable && (
-                                                    <>
-                                                    <View style={styles.reviewActions}>
-                                                    <Pressable onPress={() => handleEditReview(review)}>
-                                                        <MaterialIcons name="edit" size={24} color="white" />
-                                                    </Pressable>
-                                                    <Pressable onPress={() => handleDeleteReview(review)}>
-                                                        <MaterialIcons name="delete" size={24} color="white" />
-                                                    </Pressable>
-                                                   </View>
-                                                    </>
-                                                )}
-                                            </View>
-                                            <Text style={styles.reviewDate}>{new Date(review.date).toLocaleDateString()}</Text>
-                                            <Text style={styles.reviewQuote}>{review.quote}</Text>
-                                            <View style={styles.reviewRatingContainer}>
-                                                <Text style={styles.reviewRatingLabel}>Rating:</Text>
-                                                <Text style={styles.reviewRating}>{review.rating}</Text>
-                                            </View>
-                                        </View>
-                                    ))
-                                ) : (
-                                    <Text style={styles.noDataText}>No hay información disponible de las reseñas.</Text>
-                                )}
-                            </>
-                        )}
-                    </View>
-
-                    {/* Componente que ahora incluye tanto reseña como calificación */}
-                    <AddReview onSubmitReviewAndScore={handleAddReviewAndScore} />
-                </View>
-                <Text style={{backgroundColor:"#151715",color: "#151715"}}>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi 
-                </Text>
-            </ScrollView>
-            <ModalEditReview
-                isVisible={isModalVisible}
-                onClose={() => setModalVisible(false)}
-                onSave={handleSaveEditedReview}
-                review={selectedReview || { quote: "", rating: "" }}
-            />
-        </SafeAreaView>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingWrapper}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+          <Text style={styles.loadingText}>Cargando detalle...</Text>
+        </View>
+      </SafeAreaView>
     );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      {/* Header con botón volver */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <AntDesign name="arrowleft" size={22} color="#111827" />
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Detalle de serie
+        </Text>
+        <View style={{ width: 22 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Card principal con poster y descripción */}
+        <View style={styles.card}>
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: series.img }}
+              style={styles.image}
+              resizeMode="cover"
+              onError={(error) => console.log("Error loading image:", error)}
+            />
+          </View>
+
+          <View style={styles.scoresRow}>
+            <View style={styles.scoreBlock}>
+              <Text style={styles.scoreLabel}>Puntaje original</Text>
+              <Score score={series.score} maxScore={10} />
+            </View>
+            <View style={styles.scoreBlock}>
+              <Text style={styles.scoreLabel}>Puntaje usuarios</Text>
+              <Score score={averageScore} maxScore={10} />
+            </View>
+          </View>
+
+          <Text style={styles.title}>{series.title}</Text>
+          <Text style={styles.description}>{series.description}</Text>
+        </View>
+
+        {/* Fecha de estreno */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fecha de estreno</Text>
+          <Text style={styles.sectionBody}>
+            {series.releaseDate
+              ? new Date(series.releaseDate).toLocaleDateString()
+              : "No hay información disponible."}
+          </Text>
+        </View>
+
+        {/* Géneros */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Géneros</Text>
+          <Text style={styles.sectionBody}>
+            {series.genres && series.genres.length > 0
+              ? series.genres.join(", ")
+              : "No hay información disponible del género."}
+          </Text>
+        </View>
+
+        {/* Elenco */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Elenco</Text>
+          {series.cast && series.cast.length > 0 ? (
+            <>
+              {showFullCast ? (
+                series.cast.map((actor, index) => (
+                  <View key={index} style={styles.castItem}>
+                    <Text style={styles.castName}>{actor.name}</Text>
+                    <Text style={styles.castCharacter}>
+                      como {actor.character}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.castItem}>
+                  <Text style={styles.castName}>{series.cast[0].name}</Text>
+                  <Text style={styles.castCharacter}>
+                    como {series.cast[0].character}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.castButtonWrapper}>
+                <Button
+                  title={showFullCast ? "Ocultar elenco" : "Mostrar elenco"}
+                  onPress={() => setShowFullCast((prev) => !prev)}
+                />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.noDataText}>
+              No hay información disponible del elenco.
+            </Text>
+          )}
+        </View>
+
+        {/* Reseñas */}
+        <View style={styles.section}>
+          <View style={styles.reviewsHeaderRow}>
+            <Text style={styles.sectionTitle}>Reseñas de usuarios</Text>
+            {loadingComments && (
+              <ActivityIndicator size="small" color="#4F46E5" />
+            )}
+          </View>
+
+          {!loadingComments && (
+            <>
+              {series.reviews && series.reviews.length > 0 ? (
+                series.reviews.map((review, index) => (
+                  <View key={index} style={styles.reviewItem}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewAuthor}>{review.author}</Text>
+                      {review.isActionable && (
+                        <View style={styles.reviewActions}>
+                          <Pressable
+                            onPress={() => handleEditReview(review)}
+                            style={styles.iconAction}
+                          >
+                            <MaterialIcons
+                              name="edit"
+                              size={20}
+                              color="#4B5563"
+                            />
+                          </Pressable>
+                          <Pressable
+                            onPress={() => handleDeleteReview(review)}
+                            style={styles.iconAction}
+                          >
+                            <MaterialIcons
+                              name="delete"
+                              size={20}
+                              color="#DC2626"
+                            />
+                          </Pressable>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.reviewDate}>
+                      {new Date(review.date).toLocaleDateString()}
+                    </Text>
+                    <Text style={styles.reviewQuote}>{review.quote}</Text>
+                    <View style={styles.reviewRatingContainer}>
+                      <Text style={styles.reviewRatingLabel}>Rating:</Text>
+                      <Text style={styles.reviewRating}>{review.rating}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noDataText}>
+                  No hay información disponible de las reseñas.
+                </Text>
+              )}
+            </>
+          )}
+        </View>
+
+        {/* Formulario para agregar reseña */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Añadir reseña</Text>
+          <AddReview onSubmitReviewAndScore={handleAddReviewAndScore} />
+        </View>
+
+        <View style={{ height: 24 }} />
+      </ScrollView>
+
+      <ModalEditReview
+        isVisible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+        onSave={handleSaveEditedReview}
+        review={selectedReview || { quote: "", rating: "" }}
+      />
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-    },
-    backButton: {
-        position: "absolute",
-        top: 10,
-        left: 10,
-        zIndex: 1,
-        marginTop: 20,
-        marginLeft: 340,
-    },
-    container: {
-        flex: 1,
-        backgroundColor: "#151715",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    imageContainer: {
-        alignItems: "center",
-        marginTop: 20,
-        marginBottom: 10,
-    },
-    scoresection: { 
-        flexDirection: 'row', 
-    },
-    releaseDate: {
-        fontSize: 16,
-        color: "#fff",
-        marginBottom: 10,
-    },
-    genres: {
-        fontSize: 16,
-        color: "#fff",
-        marginBottom: 10,
-    },
-    image: {
-        width: 200,
-        height: 300,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "#fff",
-        marginBottom: 10,
-    },
-    SectionColor: {
-        backgroundColor: "#393c39",
-    },
-    description: {
-        fontSize: 16,
-        color: "#fff",
-        marginBottom: 20,
-        padding: 15,
-    },
-    section: {
-        width: "90%",
-        marginTop: 20,
-        padding: 15,
-        borderRadius: 8,
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#fff",
-        marginBottom: 10,
-    },
-    castItem: {
-        marginBottom: 5,
-    },
-    castName: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#fff",
-    },
-    castCharacter: {
-        fontSize: 14,
-        color: "#ccc",
-    },
-    reviewItem: {
-        marginBottom: 15,
-    },
-    reviewHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    reviewAuthor: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    reviewActions: {
-        flexDirection: 'row',
-        marginRight: 10,
-    },
-    reviewDate: {
-        fontSize: 12,
-        color: '#ccc',
-        marginBottom: 5,
-    },
-    reviewQuote: {
-        fontSize: 14,
-        color: '#ddd',
-    },
-    reviewRatingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 5,
-    },
-    reviewRatingLabel: {
-        fontSize: 14,
-        color: '#fff',
-        marginRight: 5,
-    },
-    reviewRating: {
-        fontSize: 14,
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    noDataText: {
-        color: '#888',
-        fontStyle: 'italic',
-    },
-    loadingIndicator: {
-        marginLeft: 10,
-    },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F4F4F5",
+  },
+
+  // Loader
+  loadingWrapper: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#4B5563",
+  },
+
+  // Header
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#E5E7EB",
+  },
+  backButton: {
+    padding: 6,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+  },
+
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+
+  // Card principal
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: "center",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  imageContainer: {
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  image: {
+    width: 200,
+    height: 300,
+    borderRadius: 12,
+  },
+  scoresRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignSelf: "stretch",
+    marginBottom: 12,
+    gap: 12,
+  },
+  scoreBlock: {
+    flex: 1,
+  },
+  scoreLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  description: {
+    fontSize: 14,
+    color: "#4B5563",
+    textAlign: "justify",
+  },
+
+  // Secciones
+  section: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 8,
+  },
+  sectionBody: {
+    fontSize: 14,
+    color: "#4B5563",
+  },
+
+  // Elenco
+  castItem: {
+    marginBottom: 8,
+  },
+  castName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  castCharacter: {
+    fontSize: 13,
+    color: "#6B7280",
+  },
+  castButtonWrapper: {
+    marginTop: 8,
+  },
+
+  // Reseñas
+  reviewsHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  reviewItem: {
+    marginBottom: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#E5E7EB",
+    paddingBottom: 10,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  reviewAuthor: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  reviewActions: {
+    flexDirection: "row",
+  },
+  iconAction: {
+    marginLeft: 8,
+  },
+  reviewDate: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  reviewQuote: {
+    fontSize: 13,
+    color: "#4B5563",
+  },
+  reviewRatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  reviewRatingLabel: {
+    fontSize: 13,
+    color: "#374151",
+    marginRight: 4,
+  },
+  reviewRating: {
+    fontSize: 13,
+    color: "#111827",
+    fontWeight: "600",
+  },
+
+  noDataText: {
+    color: "#9CA3AF",
+    fontStyle: "italic",
+    fontSize: 13,
+  },
 });
 
 export default SeriesDetails;

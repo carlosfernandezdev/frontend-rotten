@@ -1,7 +1,7 @@
 class FetchWrapper {
     constructor(baseUrl) {
         this.baseUrl = baseUrl ? baseUrl : 'http://localhost:3000';
-        //console.log(this.baseUrl);
+        console.log(this.baseUrl);
     }
 
     async post(endpoint, data) {
@@ -15,7 +15,7 @@ class FetchWrapper {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-                credentials: 'include'
+                //credentials: 'include'
             });
     
             return response;
@@ -28,13 +28,13 @@ class FetchWrapper {
     async get(endpoint) {
         try {
             //console.log('GET METHOD')
-            //console.log(this.baseUrl + endpoint)
+            console.log(this.baseUrl + endpoint)
             const response = await fetch(this.baseUrl + endpoint, {
                 method: 'GET',
                 // headers: {
                 //     'Content-Type': 'application/json',
                 // },
-                credentials: 'include'
+                //credentials: 'include'
             });
             // const data = await response.json();
             // //console.log(data)
@@ -53,7 +53,7 @@ class FetchWrapper {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-                credentials: 'include'
+                //credentials: 'include'
             });
     
             return response;
@@ -72,7 +72,7 @@ class FetchWrapper {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include'
+                //credentials: 'include'
             });
             //console.log('aa')
             return response;
@@ -91,7 +91,7 @@ class FetchWrapper {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-                credentials: 'include'
+                //credentials: 'include'
             });
 
             return response;
@@ -105,5 +105,5 @@ class FetchWrapper {
 
 
 module.exports = {
-    fetchsito1: new FetchWrapper('https://api-filmatic.onrender.com')
+    fetchsito1: new FetchWrapper('https://backend-rotten-production.up.railway.app')
 };

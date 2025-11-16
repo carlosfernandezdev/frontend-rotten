@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TextInput, Button, StyleSheet, View, Text, Pressable } from "react-native";
+import { TextInput, StyleSheet, View, Text, Pressable } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 const AddReview = ({ onSubmitReviewAndScore }) => {
@@ -8,12 +8,14 @@ const AddReview = ({ onSubmitReviewAndScore }) => {
 
   const handleReviewSubmit = () => {
     if (!reviewText || !score) {
-      alert("Por favor, complete tanto la reseña como la calificación.");
+      alert("Por favor, completa tanto la reseña como la calificación.");
       return;
     }
 
-    if (score >= 1 && score <= 10) {
-      onSubmitReviewAndScore(reviewText, score);
+    const numericScore = Number(score);
+
+    if (numericScore >= 1 && numericScore <= 10) {
+      onSubmitReviewAndScore(reviewText, numericScore);
       setReviewText("");
       setScore("");
     } else {
@@ -23,83 +25,107 @@ const AddReview = ({ onSubmitReviewAndScore }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Agrega una reseña y calificación</Text>
-      <View style={styles.containerInput}>
-        <MaterialCommunityIcons name="chat-plus-outline" size={30} color="white" />
+      <Text style={styles.label}>Tu reseña</Text>
+      <View style={styles.inputRow}>
+        <MaterialCommunityIcons
+          name="chat-plus-outline"
+          size={22}
+          color="#6B7280"
+        />
         <TextInput
           style={styles.input}
-          placeholder="Escribe tu reseña"
-          placeholderTextColor="gray"
+          placeholder="Escribe qué te pareció..."
+          placeholderTextColor="#9CA3AF"
           value={reviewText}
           onChangeText={setReviewText}
           multiline
-          maxHeight={100}
-          scrollEnabled
         />
-        <View style={styles.scoreContainer}>
-          <TextInput
-            style={styles.scoreInput}
-            placeholder="1-10"
-            placeholderTextColor="white"
-            value={score}
-            onChangeText={(input) => {
-              const validScore = /^[0-9]$|^10$/.test(input);
-              if (validScore || input === "") {
-                setScore(input);
-              }
-            }}
-            keyboardType="numeric"
-            maxLength={2}
-          />
-        </View>
       </View>
-      <Button title="Enviar reseña y calificación" onPress={handleReviewSubmit} />
+
+      <Text style={styles.label}>Calificación (1–10)</Text>
+      <View style={styles.scoreRow}>
+        <TextInput
+          style={styles.scoreInput}
+          placeholder="1-10"
+          placeholderTextColor="#9CA3AF"
+          value={score}
+          onChangeText={(input) => {
+            const validScore = /^[0-9]$|^10$/.test(input);
+            if (validScore || input === "") {
+              setScore(input);
+            }
+          }}
+          keyboardType="numeric"
+          maxLength={2}
+        />
+        <Text style={styles.scoreHint}>Usa un número entero.</Text>
+      </View>
+
+      <Pressable style={styles.button} onPress={handleReviewSubmit}>
+        <Text style={styles.buttonText}>Enviar reseña</Text>
+      </Pressable>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: "#151715",
-    borderRadius: 8,
-    width: "90%",
+    gap: 10,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
+  label: {
+    fontSize: 13,
+    color: "#4B5563",
+    marginBottom: 2,
   },
-  containerInput: {
+  inputRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#151715",
+    alignItems: "flex-start",
+    gap: 8,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    marginBottom: 15,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
   },
   input: {
     flex: 1,
-    color: "#fff",
-    marginLeft: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#555",
-    paddingVertical: 5,
-    fontSize: 16,
+    fontSize: 14,
+    color: "#111827",
+    minHeight: 60,
+    textAlignVertical: "top",
   },
-  scoreContainer: {
-    backgroundColor: "#3b3c39",
-    borderRadius: 10,
-    padding: 8,
-    marginLeft: 10,
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   scoreInput: {
-    color: "#fff",
+    width: 60,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
     textAlign: "center",
-    width: 40,
+    paddingVertical: 4,
+    fontSize: 14,
+    color: "#111827",
+  },
+  scoreHint: {
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+  button: {
+    marginTop: 8,
+    backgroundColor: "#4F46E5",
+    borderRadius: 999,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 

@@ -1,164 +1,198 @@
-import { View, Text,ImageBackground, StyleSheet, Image } from 'react-native';
-import React, {useState} from 'react';
-import {Link} from 'expo-router';
-import fondo from '../../assets/fondo.png';
-import logo from '../../assets/logo.png'
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { Link, router } from 'expo-router';
 import CustomInput from '../../Components/CustomInput';
 import CustomButton from '../../Components/CustomButton';
-import { fetchsito1 } from '../../utils/fetchMethod.js';
-import { router } from 'expo-router';
+import logo from '../../assets/logo.png';
+import { fetchsito1 } from '../../utils/fetchMethod';
 
 const Login = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    // const navigation = useNavigation();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-    async function onSingInPressed() {
-        try {
-            //console.log('hare el fetch');
-            //console.log(username);
-            //console.log(password);
-            const response = await fetchsito1.post('/user/login', { username, password });
-            if(!username || !password){
-                setError('Por favor, llena todos los campos');
-                return
-            }
-            //console.log('fetch hecho');
-            const data = await response.json();
-            //console.log(response);
-            if (response.ok) {
-                //console.log('ahora deberia llevarte a home');
-                router.navigate('home');
-                //console.log(data);
-            } else {
-                //console.log(data);
-                console.error(data.error);
-                setError(data.error);
-            }
-            
-            //console.log(data);
-        } catch (error) {
-            console.error(error);
-        }
+  const onSignInPressed = async () => {
+    if (!username || !password) {
+      setError('Por favor, llena todos los campos');
+      return;
     }
 
+    try {
+      const response = await fetchsito1.post('/user/login', { username, password });
+      const data = await response.json?.();
+
+      if (response.ok) {
+        setError('');
+        router.replace('home');
+      } else {
+        setError(data?.error || 'Error al iniciar sesión');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo conectar con el servidor');
+    }
+  };
 
   return (
-    <ImageBackground source={fondo} style={styles.background}>
-            <View style={styles.container}>
-            <View style={{ flexDirection: 'row', alignItems: 'center'}}>
-            <Image source={logo} style={{width: 100, height: 80}} />
-            <Text style={styles.Title}>Filmatic</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.card}>
+          {/* Header */}
+          <View style={styles.headerRow}>
+            <View style={styles.logoWrapper}>
+              <Image source={logo} style={styles.logo} resizeMode="contain" />
             </View>
-        <Text style={styles.subTitle}>Iniciar sesión</Text>
-        <CustomInput
-            value={username}
-            setvalue={setUsername}
-            placeholder="Usuario"
-        />
-        <CustomInput
-            value={password}
-            setvalue={setPassword}
-            placeholder="Contraseña"
-            secureTextEntry // Esto activa la funcionalidad de mostrar/ocultar contraseña
-        />
+            <View>
+              <Text style={styles.appTitle}>RedMeter</Text>
+              <Text style={styles.appTagline}>Tu medidor de pelis y series</Text>
+            </View>
+          </View>
 
-        <Text style={styles.error}>
-            {error}
-        </Text>
+          <Text style={styles.sectionTitle}>Iniciar sesión</Text>
 
-        <CustomButton 
-            text="Acceder"
-            onPress={onSingInPressed}
-        />
-        <Link href="/validateMail">
-            <Text style={styles.ForgotPassword}>
-                ¿Olvidaste tu contraseña? <Text style={styles.signInLink}>Ingresa aquí</Text>
-            </Text>
-        </Link>
-        <Link href="/register">
-            <Text style={styles.signInText}> 
-                ¿No tienes cuenta? <Text style={styles.signInLink}>Regístrate aquí</Text>
-            </Text>
-        </Link>
-        
-        {/* <Link href="/index" >home</Link> */}
+          {/* Form */}
+          <View style={styles.form}>
+            <CustomInput
+              value={username}
+              setvalue={setUsername}
+              placeholder="Usuario"
+            />
+            <CustomInput
+              value={password}
+              setvalue={setPassword}
+              placeholder="Contraseña"
+              secureTextEntry
+            />
 
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <CustomButton text="Acceder" onPress={onSignInPressed} />
+          </View>
+
+          {/* Links */}
+          <View style={styles.linksBlock}>
+            
+
+            <Link href="/register">
+              <Text style={styles.linkText}>
+                ¿No tienes cuenta?{' '}
+                <Text style={styles.linkAccent}>Regístrate</Text>
+              </Text>
+            </Link>
+          </View>
+
+          <Text style={styles.footerHint}>
+            ★ Descubre qué tan “fresca” está tu próxima película.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
-</ImageBackground>
-  )
-}
+  );
+};
+
 const styles = StyleSheet.create({
-
-background: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-container: {
-    width: '80%',
-    alignItems: 'flex-start',
-    borderRadius: 10,
-    padding: 20,
-    marginTop: -120,
-},
-title: {
-    color: 'white',
-    fontSize: 30,
-    fontFamily: 'Garet',
-    alignSelf: 'center',
-    marginBottom: 40,
-},
-error: {
-    color: 'red',
-    marginBottom: 10,
-},
-Title: {
-    padding: 10,
-    fontSize: 30,
-    color: 'white',
-    marginLeft: 5,
-    marginTop: 25,
-    fontFamily: 'Bukhari-Script',
+  // Fondo general clarito, como el home
+  screen: {
+    flex: 1,
+    backgroundColor: '#F4F4F5',
   },
-subTitle: {
-    color: 'white',
-    fontSize: 25,
-    marginBottom: 20,
-    marginLeft: 15,
-},
-button: {
-    backgroundColor: 'transparent',
-    borderRadius: 5,
-    borderColor: 'white',
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+
+  // Tarjeta principal
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
     borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    alignSelf: 'center',
-},
-buttonText: {
-    color: 'white',
-    fontSize: 16,
-},
+    borderColor: '#E5E7EB',
+  },
 
-ForgotPassword: {
-    color: 'white',
-    marginTop: 15,
-    alignSelf: 'left',
-},
+  // Header con logo + texto
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 22,
+  },
+  logoWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  appTitle: {
+    color: '#111827',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  appTagline: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 2,
+  },
 
-signInText: {
-    color: 'white',
-    marginTop: 40,
-    alignSelf: 'left',
-    marginBottom: 20,
-},
-signInLink: {
-    marginTop: 10,
-    color: 'white',
+  // Título de la sección
+  sectionTitle: {
+    color: '#111827',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 14,
+  },
+
+  // Formulario
+  form: {
+    width: '100%',
+    gap: 10,
+    marginBottom: 18,
+  },
+
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  // Bloque de links
+  linksBlock: {
+    marginTop: 4,
+    gap: 8,
+  },
+  linkText: {
+    color: '#4B5563',
+    fontSize: 13,
+  },
+  linkAccent: {
+    color: '#EF4444',
     textDecorationLine: 'underline',
-    marginLeft: 96,    
-},
+    fontWeight: '600',
+  },
+
+  // Frase final
+  footerHint: {
+    marginTop: 18,
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
 });
-export default Login
+
+export default Login;

@@ -17,37 +17,37 @@ const Movies = () => {
   const [filteredFilms, setFilteredFilms] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false); // Para controlar la carga adicional
-  const [page, setPage] = useState(1); // Página actual
-  const [hasMore, setHasMore] = useState(true); // Controla si hay más datos
-  const [reload, setReload] = useState(false);  
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [reload, setReload] = useState(false);
 
   useEffect(() => {
     if (searchQuery === '') {
-      setFilms([]); // Limpiar las películas actuales
-      setFilteredFilms([]); // Limpiar las películas filtradas
-      setPage(1); // Reiniciar la página a 1
-      loadMovies(1); // Cargar las películas desde la primera página
+      setFilms([]);
+      setFilteredFilms([]);
+      setPage(1);
+      loadMovies(1);
     } else {
       filterFilms(searchQuery);
     }
   }, [searchQuery]);
 
   const loadMovies = async (page) => {
-    if (loadingMore) return; // Evita múltiples cargas simultáneas
+    if (loadingMore) return;
     setLoadingMore(true);
 
     try {
-      const newMovies = await getAllMovies(page); // Llama a la función con la página actual
+      const newMovies = await getAllMovies(page);
 
       if (newMovies.length === 0) {
-        setHasMore(false); // Si no hay más películas, detén la paginación
+        setHasMore(false);
       } else {
         const uniqueMovies = newMovies.filter(
           (movie) => !films.some((film) => film.slug === movie.slug)
         );
-        setFilms((prev) => [...prev, ...uniqueMovies]); // Añade las películas al estado existente
-        setFilteredFilms((prev) => [...prev, ...uniqueMovies]); // Sincroniza con las filtradas
+        setFilms((prev) => [...prev, ...uniqueMovies]);
+        setFilteredFilms((prev) => [...prev, ...uniqueMovies]);
       }
     } catch (error) {
       console.error("Error al cargar películas:", error);
@@ -58,10 +58,10 @@ const Movies = () => {
   };
 
   const handleLoadMore = () => {
-    if (!hasMore || loadingMore) return; // No cargar si no hay más datos o ya está cargando
+    if (!hasMore || loadingMore) return;
     const nextPage = page + 1;
-    setPage(nextPage); // Incrementa la página
-    loadMovies(nextPage); // Carga la siguiente página
+    setPage(nextPage);
+    loadMovies(nextPage);
   };
 
   const handleSearch = async (query) => {
@@ -76,106 +76,176 @@ const Movies = () => {
   const filterFilms = async (query) => {
     try {
       const result = await searchMovieByName(query);
-      setFilms(result); // Actualizamos el estado general
-      setFilteredFilms(result); // Actualizamos lo que se muestra
+      setFilms(result);
+      setFilteredFilms(result);
     } catch (error) {
       console.error("Error al filtrar películas:", error);
     }
   };
 
-  if (loadedFont) {
+  if (!loadedFont) {
     return (
-      <View style={{ flex: 1, resizeMode: 'cover', justifyContent: 'center' }}>
-        <View style={{ flex: 1 }}>
-          <View style={styles.header}>
-            <Logo />
-            <SearchBar 
-              searchQuery={searchQuery} 
-              setSearchQuery={setSearchQuery} 
-              handleSearch={handleSearch} 
-            />
-          </View>
-          <SafeAreaView style={styles.safeArea}>
-            {loading && page === 1 ? (
-              <ActivityIndicator size="large" color="white" />
-            ) : (
-              <View style={styles.listContainer}>
-                <FlatList
-                  data={filteredFilms}
-                  keyExtractor={(film, index) => `${film.slug}-${index}`} // Combina slug e índice para garantizar unicidad
-                  ListHeaderComponent={() => (
-                    <Text style={styles.Title1}>Películas disponibles</Text>
-                  )}
-                  renderItem={({ item, index }) => (
-                    <AnimatedCustomMovie movie={item} index={index} />
-                  )}
-                  onEndReached={handleLoadMore} // Detectar el final de la lista
-                  onEndReachedThreshold={0.5} // Activar antes de llegar al final
-                  ListFooterComponent={() => (
-                    loadingMore ? (
-                      <View style={styles.loadingMoreContainer}>
-                        <ActivityIndicator size="small" color="white" />
-                        <Text style={styles.loadingText}>Cargando más películas...</Text>
-                      </View>
-                    ) : !hasMore ? (
-                      <Text style={styles.noMoreText}>No hay más películas para mostrar.</Text>
-                    ) : null
-                  )}
-                />
-              </View>
-            )}
-          </SafeAreaView>
-        </View>
-        <Menu />
-        <NavBar />
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingTextFont}>Cargando fuentes...</Text>
       </View>
     );
-  } else {
-    return <Text>AYUDA FONT</Text>;
   }
+
+return (
+  <View style={styles.screen}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Header solo con el logo */}
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Logo />
+        </View>
+      </View>
+
+      {/* SearchBar separado, más abajo */}
+      <View style={styles.searchWrapper}>
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleSearch={handleSearch}
+        />
+      </View>
+
+      {loading && page === 1 ? (
+        <View style={styles.initialLoader}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Cargando películas...</Text>
+        </View>
+      ) : (
+        <View style={styles.listWrapper}>
+          <Text style={styles.title}>Películas disponibles</Text>
+          <View style={styles.listContainer}>
+            <FlatList
+              data={filteredFilms}
+              keyExtractor={(film, index) => `${film.slug}-${index}`}
+              renderItem={({ item, index }) => (
+                <AnimatedCustomMovie movie={item} index={index} />
+              )}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={() =>
+                loadingMore ? (
+                  <View style={styles.loadingMoreContainer}>
+                    <ActivityIndicator size="small" />
+                    <Text style={styles.loadingText}>
+                      Cargando más películas...
+                    </Text>
+                  </View>
+                ) : !hasMore ? (
+                  <Text style={styles.noMoreText}>
+                    No hay más películas para mostrar.
+                  </Text>
+                ) : null
+              }
+            />
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
+
+    <Menu />
+    <NavBar />
+  </View>
+);
 };
 
+
 const styles = StyleSheet.create({
-  container: {
+  // Pantalla base – color claro, nada de imagen de fondo
+  screen: {
     flex: 1,
-    backgroundColor: '#111211',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F4F4F5',
   },
-  header: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    backgroundColor: '#111211', // Fondo consistente con la app
-    borderBottomWidth: 1, // Línea inferior para separar el encabezado
-    borderBottomColor: '#333',
-  },
+
   safeArea: {
     flex: 1,
-    backgroundColor: '#111211',
   },
-  listContainer: {
+
+  // Header limpio, tipo app moderna
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E7EB',
+  },
+  logoContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
     flex: 1,
-    width: '100%',
+    marginLeft: 8,
   },
-  loadingMoreContainer: {
-    paddingVertical: 20,
+
+  // Loader inicial
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: '#F4F4F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingTextFont: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  initialLoader: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: 'white',
-    marginTop: 10,
+    marginTop: 8,
+    fontSize: 14,
+    color: '#4B5563',
+  },
+
+  // Contenido principal
+  listWrapper: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#111827',
+  },
+  listContainer: {
+    flex: 1,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   noMoreText: {
-    color: 'white',
+    color: '#6B7280',
     textAlign: 'center',
-    paddingVertical: 20,
-  },
-  Title1: {
-    padding: 10,
-    fontSize: 20,
-    color: 'white',
-    marginLeft: 5,
-    marginTop: 10,
+    paddingVertical: 16,
+    fontSize: 13,
   },
 });
 

@@ -1,7 +1,7 @@
 {
   "expo": {
     "newArchEnabled": true,
-    "name": "Filmatic",
+    "name": "RedMeter",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -23,7 +23,7 @@
       }
     },
     "android": {
-      "package": "com.moviles.filmatic",
+      "package": "com.moviles.RedMeter",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

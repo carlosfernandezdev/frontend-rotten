@@ -7,17 +7,13 @@ import eventEmitter from "../utils/EventEmitter.js";
 export function RemoveWatchList({ item, source }) {
 
   const removeFromWatchList = async () => {
-    //console.log('hola en remove from watchlist');
     try {
-      //console.log(item);
-      //console.log(source);
       const response = await fetchsito1.post('/user/deleteFromWatchlist', { filmId: item._id });
       const data = await response.json();
-      //console.log(data);
+
       if (response.ok) {
-       //console.log('eliminado de watchlist');
-       eventEmitter.emit('removeFromWatchList');
-       Alert.alert(`${item.title} eliminado de la lista de seguimiento.`); 
+        eventEmitter.emit('removeFromWatchList');
+        Alert.alert("Listas", `${item.title} fue eliminado de tu Watchlist.`);
       }
     } catch (error) {
       console.error(error);
@@ -25,25 +21,34 @@ export function RemoveWatchList({ item, source }) {
   };
 
   return (
-    <View>
-      <Pressable onPress={removeFromWatchList} style={styles.boton} activeOpacity={0.7}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialIcons name="remove-circle-outline" size={18} color="white" />
-          <Text style={{ color: 'white', marginLeft: 5 }}>WatchList</Text>
-        </View>
-      </Pressable>
-    </View>
+    <Pressable onPress={removeFromWatchList} style={styles.button}>
+      <MaterialIcons name="remove-circle-outline" size={20} color="#B91C1C" />
+      <Text style={styles.text}>Quitar</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  boton: {
-    backgroundColor: '#2f2f2f',
-    width: 120,
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    marginLeft: 10,
+  button: {
+    backgroundColor: "#FEE2E2",        // rojito pastel suave
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginTop: 10,
+    alignSelf: "flex-start",
+    gap: 6,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  text: {
+    color: "#B91C1C",  // rojo oscuro
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

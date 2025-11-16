@@ -5,61 +5,60 @@ import { fetchsito1 } from "../utils/fetchMethod.js";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function WatchList({ item, source }) {  // 'item' puede ser película o serie
-    const [watchList, setWatchList] = useState([]);
-    ////console.log(`Puedes añadir a WatchList desde ${source}`);
-    ////console.log(item)
-    // const loadWatchList = async () => {
-    //         const jsonValue = await AsyncStorage.getItem('@watchlist');
-    //         const storedWatchList = jsonValue != null ? JSON.parse(jsonValue) : [];
-    //         setWatchList(storedWatchList);
-    // };
+  const [watchList, setWatchList] = useState([]);
 
-    const addToWatchList = async () => {
-        //console.log(item)
-        //console.log('hola')
-        try {
-            // //console.log(item)
-            // //console.log(source)
-            const response = await fetchsito1.post('/film/postFilm', {...item, fromReview: false, source});
-            const data = await response.json();
-            //console.log(data);
-            //console.log(response.ok)
-            if(response.ok){
-                Alert.alert(`${item.title} añadido a tu WatchList`);
-                //console.log('anadido a tu bd')
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
+  const addToWatchList = async () => {
+    try {
+      const response = await fetchsito1.post('/film/postFilm', {
+        ...item,
+        fromReview: false,
+        source,
+      });
+      const data = await response.json();
 
-    // useEffect(() => {
-    //     loadWatchList();
-    // }, []);
+      if (response.ok) {
+        Alert.alert(`${item.title} añadido a tu WatchList`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-    return (
-        <Pressable
-            onPress={addToWatchList}
-            style={styles.boton}
-            activeOpacity={0.7}
-        >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialIcons name="add-circle-outline" size={18} color="white" />
-                
-            <Text style={{ color: 'white', marginLeft: 5 }}>WatchList</Text>
-            </View>
-        </Pressable>
-    );
+  return (
+    <Pressable
+      onPress={addToWatchList}
+      style={styles.button}
+      android_ripple={{ color: '#E0E7FF' }}
+    >
+      <View style={styles.contentRow}>
+        <MaterialIcons
+          name="add-circle-outline"
+          size={18}
+          color="#4F46E5" // acento violeta
+        />
+        <Text style={styles.text}>WatchList</Text>
+      </View>
+    </Pressable>
+  );
 }
 
 const styles = StyleSheet.create({
-    boton: {
-        backgroundColor: '#2f2f2f',
-        width: 120,
-        padding: 10,
-        borderRadius: 5,
-        marginTop: 10,
-        marginLeft: 10,
-        alignItems: 'center',
-    },
+  button: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EEF2FF',   // fondo lavanda claro
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,            // pill
+    marginTop: 6,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  text: {
+    color: '#111827',
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: '500',
+  },
 });

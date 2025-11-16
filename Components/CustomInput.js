@@ -1,58 +1,65 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TextInput, Pressable } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { View, TextInput, StyleSheet } from "react-native";
 
-const CustomInput = ({ value, setvalue, placeholder, secureTextEntry }) => {
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+const CustomInput = ({
+  value,
+  setvalue,
+  placeholder,
+  secureTextEntry,
+  style,
+  ...rest
+}) => {
+  const [focused, setFocused] = useState(false);
 
-    return (
-        <View style={styles.inputContainer}>
-            <TextInput
-                value={value}
-                onChangeText={setvalue}
-                placeholder={placeholder}
-                style={styles.input}
-                secureTextEntry={secureTextEntry && !isPasswordVisible}
-                placeholderTextColor="white"
-            />
-            {secureTextEntry && (
-                <Pressable
-                    onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                    style={styles.iconContainer}
-                >
-                    <Ionicons
-                        name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
-                        size={24}
-                        color="white"
-                    />
-                </Pressable>
-            )}
-        </View>
-    );
+  return (
+    <View style={[styles.container, focused && styles.containerFocused, style]}>
+      <TextInput
+        value={value}
+        onChangeText={setvalue}
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        secureTextEntry={secureTextEntry}
+        style={styles.input}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...rest}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    inputContainer: {
-        width: "100%",
-        backgroundColor: "rgba(255, 255, 255, 0.2)", 
-        borderRadius: 10,
-        marginBottom: 20,
-        paddingHorizontal: 15,
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    input: {
-        flex: 1,
-        height: 45,
-        color: "white",
-        fontSize: 16,
-        paddingHorizontal: 10,
-        borderBottomWidth: 2,
-        borderColor: "white",
-    },
-    iconContainer: {
-        marginLeft: 10,
-    },
+  container: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1.2,
+    borderColor: "#E5E7EB",
+    marginBottom: 12,
+
+    // Sombra suave moderna
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+
+  containerFocused: {
+    borderColor: "#3B82F6", // azul elegante
+    shadowColor: "#3B82F6",
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+  },
+
+  input: {
+    color: "#111827",
+    fontSize: 15,
+    fontWeight: "500",
+  },
 });
 
 export default CustomInput;

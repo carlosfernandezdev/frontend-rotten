@@ -1,151 +1,199 @@
 import React, { useState } from 'react';
-import { View, Text, ImageBackground, StyleSheet, Alert, Image } from 'react-native';
-import fondo from '../../assets/fondo.png';
-import logo from '../../assets/logo.png';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { Link, router } from 'expo-router';
 import CustomInput from '../../Components/CustomInput';
 import CustomButton from '../../Components/CustomButton';
-import { Link, router } from 'expo-router';
+import logo from '../../assets/logo.png';
 import { fetchsito1 } from '../../utils/fetchMethod';
 
 const Register = () => {
-    const [email, setCorreo] = useState('');
-    const [password, setPassword] = useState('');
-    const [Error, setError] = useState('');
-    const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setCorreo] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-    const onRegisterPressed = async () => {
-        try {
-            //console.log('kklkjlkjlk')
-            if (!email || !password || !username) {
-                setError('Por favor, llena todos los campos');
-                return;
-            }
-            const response = await fetchsito1.post('/user/register', { username, email, password });
-            const data = await response.json();
-            //console.log(data);
-            if (response.ok) {
-                router.push({
-                    pathname: 'register2',
-                    params: { email }
-                });
-            } else {
-                setError(data.error);
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
+  const onRegisterPressed = async () => {
+    if (!username || !email || !password) {
+      setError('Por favor, llena todos los campos');
+      return;
+    }
 
-    return (
-        <ImageBackground source={fondo} style={styles.background}>
-            <View style={styles.container}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                    <Image source={logo} style={{ width: 100, height: 80 }} />
-                    <Text style={styles.Title}>Filmatic</Text>
-                </View>
-                <Text style={styles.subTitle1}>Registro Paso 1</Text>
+    const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!correoRegex.test(email)) {
+      setError('Por favor, ingresa un correo válido');
+      return;
+    }
 
-                <CustomInput
-                    value={username}
-                    setvalue={setUsername}
-                    placeholder="Usuario"
-                />
+    try {
+      const response = await fetchsito1.post('/user/register', {
+        username,
+        email,
+        password,
+      });
+      const data = await response.json?.();
 
+      if (response.ok) {
+        setError('');
+        router.replace('login');
+      } else {
+        setError(data?.error || 'No se pudo completar el registro');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Error al conectar con el servidor');
+    }
+  };
 
-                <CustomInput
-                    value={email}
-                    setvalue={setCorreo}
-                    placeholder="Correo"
-                />
-
-                <CustomInput
-                    value={password}
-                    setvalue={setPassword}
-                    placeholder="Contraseña"
-                    secureTextEntry
-                />
-
-                <Text style={styles.errorText}>{Error}</Text>
-
-                <Text style={styles.signInText}>Al registrarte, confirmas que aceptas nuestros términos de uso y política de privacidad.</Text>
-
-                <CustomButton text="Registrarse" onPress={onRegisterPressed} />
-
-                <Link href="/login" style={styles.signInLink}>Volver al login</Link>
-
+  return (
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.card}>
+          {/* Header */}
+          <View style={styles.headerRow}>
+            <View style={styles.logoWrapper}>
+              <Image source={logo} style={styles.logo} resizeMode="contain" />
             </View>
-        </ImageBackground>
-    );
+            <View>
+              <Text style={styles.appTitle}>RedMeter</Text>
+              <Text style={styles.appTagline}>Crea tu cuenta para puntuar</Text>
+            </View>
+          </View>
+
+          <Text style={styles.sectionTitle}>Registro</Text>
+
+          {/* Form */}
+          <View style={styles.form}>
+            <CustomInput
+              value={username}
+              setvalue={setUsername}
+              placeholder="Usuario"
+            />
+            <CustomInput
+              value={email}
+              setvalue={setCorreo}
+              placeholder="Correo"
+            />
+            <CustomInput
+              value={password}
+              setvalue={setPassword}
+              placeholder="Contraseña"
+              secureTextEntry
+            />
+
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <CustomButton text="Crear cuenta" onPress={onRegisterPressed} />
+          </View>
+
+          {/* Links */}
+          <View style={styles.linksBlock}>
+            <Link href="/login">
+              <Text style={styles.linkText}>
+                ¿Ya tienes cuenta?{' '}
+                <Text style={styles.linkAccent}>Inicia sesión</Text>
+              </Text>
+            </Link>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    container: {
-        width: '80%',
-        alignItems: 'center',
-        borderRadius: 10,
-        padding: 20,
-        marginTop: -120,
-    },
-    subTitle1: {
-        color: 'white',
-        fontSize: 25,
-        marginBottom: 20,
-        marginLeft: 15,
-        marginTop: 10,
-    },
-    Title: {
-        padding: 10,
-        fontSize: 30,
-        color: 'white',
-        marginLeft: 5,
-        marginTop: 25,
-        fontFamily: 'Bukhari-Script',
-      },
-    title: {
-        color: 'white',
-        fontSize: 30,
-        alignSelf: 'center',
-        fontFamily: 'Garet',
-        marginBottom: 30,
-        marginTop: 50,
-    },
-    title1: {
-        color: 'white',
-        fontSize: 25,
-        alignSelf: 'center',
-        fontFamily: 'Garet',
-        marginBottom: 30,
-    },
-    subTitle: {
-        color: 'white',
-        fontSize: 25,
-        marginBottom: 20,
-        marginLeft: 15,
-    },
- 
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontFamily: 'Garet',
-    },
-    errorText: {
-        color: 'red',
-    },
-    signInText: {
-        color: 'white',
-        marginTop: 3,        
-        alignSelf: 'center',
-    },
-    signInLink: {
-        color: 'white',
-        textDecorationLine: 'underline',
-        marginTop: 10,
-    }
+  // MISMO ESTILO CLARO QUE EL LOGIN NUEVO
+  screen: {
+    flex: 1,
+    backgroundColor: '#F4F4F5',
+  },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+
+  // CARD PRINCIPAL
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  // HEADER
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 22,
+  },
+  logoWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  appTitle: {
+    color: '#111827',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  appTagline: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  // TÍTULO
+  sectionTitle: {
+    color: '#111827',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 14,
+  },
+
+  // FORM
+  form: {
+    width: '100%',
+    gap: 10,
+    marginBottom: 18,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  // LINKS
+  linksBlock: {
+    marginTop: 6,
+  },
+  linkText: {
+    color: '#4B5563',
+    fontSize: 13,
+  },
+  linkAccent: {
+    color: '#3B82F6', // azul suave bonito
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
 });
 
 export default Register;
